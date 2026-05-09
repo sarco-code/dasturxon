@@ -1,0 +1,13 @@
+{
+  "name": "uzresto-platform",
+  "private": true,
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
+    "build": "npm run build -w apps/api && npm run build -w apps/web",
+    "start": "concurrently \"npm run start -w apps/api\" \"npm run start -w apps/web\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}
