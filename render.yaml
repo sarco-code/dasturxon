@@ -1,0 +1,28 @@
+﻿services:
+  - type: web
+    name: dasturxon-api
+    runtime: node
+    rootDir: apps/api
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: PORT
+        value: 10000
+      - key: CLIENT_URL
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: CLICK_MERCHANT_ID
+        sync: false
+      - key: PAYME_MERCHANT_ID
+        sync: false
+      - key: UZUM_BANK_MERCHANT_ID
+        sync: false
