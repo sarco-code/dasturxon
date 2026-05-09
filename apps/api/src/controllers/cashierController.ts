@@ -5,12 +5,16 @@ import { prisma } from "../config/prisma.js";
 const generateReceiptNo = () => `RCP-${Date.now()}`;
 
 type ReceiptPayloadItem = { nomi: string; soni: number; narxi: number };
+type OrderWithItems = Prisma.OrderGetPayload<{ include: { items: { include: { menuItem: true } }; restaurant: true } }>;
 
 export const cashierPayOrder = async (req: Request, res: Response) => {
   const user = (req as any).user;
   const { orderId, method } = req.body;
 
-  const order = await prisma.order.findUnique({ where: { id: orderId }, include: { items: { include: { menuItem: true } }, restaurant: true } });
+  const order: OrderWithItems | null = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { items: { include: { menuItem: true } }, restaurant: true }
+  });
   if (!order) return res.status(404).json({ message: "Order topilmadi" });
 
   const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -23,7 +27,11 @@ export const cashierPayOrder = async (req: Request, res: Response) => {
       restoran: order.restaurant.name,
       sana: new Date().toISOString(),
       kassir: user.id,
-      items: order.items.map((i): ReceiptPayloadItem => ({ nomi: i.menuItem.name, soni: i.quantity, narxi: i.priceUzs })),
+      items: order.items.map((i: OrderWithItems["items"][number]): ReceiptPayloadItem => ({
+        nomi: i.menuItem.name,
+        soni: i.quantity,
+        narxi: i.priceUzs
+      })),
       jami: order.totalUzs
     };
 

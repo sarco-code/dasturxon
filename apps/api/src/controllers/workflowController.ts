@@ -1,27 +1,28 @@
 ﻿import { Request, Response } from "express";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../config/prisma.js";
 import { io } from "../socket/io.js";
 
 type OrderInputItem = { menuItemId: string; quantity: number };
-type MenuMapValue = { id: string; priceUzs: number };
+type MenuMini = Prisma.MenuItemGetPayload<{ select: { id: true; priceUzs: true } }>;
 
 export const waiterCreateOrder = async (req: Request, res: Response) => {
   const user = (req as any).user;
   const { roomId, tableId, items } = req.body as { roomId: string; tableId: string; items: OrderInputItem[] };
 
-  const products = await prisma.menuItem.findMany({
+  const products: MenuMini[] = await prisma.menuItem.findMany({
     where: { id: { in: items.map((i: OrderInputItem) => i.menuItemId) }, restaurantId: user.restaurantId },
     select: { id: true, priceUzs: true }
   });
 
-  const map = new Map<string, MenuMapValue>(products.map((p) => [p.id, p]));
+  const map = new Map<string, number>(products.map((p: MenuMini) => [p.id, p.priceUzs]));
   const prepared = items.map((i: OrderInputItem) => ({
     menuItemId: i.menuItemId,
     quantity: i.quantity,
-    priceUzs: map.get(i.menuItemId)?.priceUzs ?? 0
+    priceUzs: map.get(i.menuItemId) ?? 0
   }));
 
-  const totalUzs = prepared.reduce((s, i) => s + i.quantity * i.priceUzs, 0);
+  const totalUzs = prepared.reduce((s: number, i: { quantity: number; priceUzs: number }) => s + i.quantity * i.priceUzs, 0);
 
   const order = await prisma.order.create({
     data: { restaurantId: user.restaurantId, roomId, tableId, waiterId: user.id, totalUzs, items: { create: prepared } },
