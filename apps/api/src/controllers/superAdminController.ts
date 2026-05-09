@@ -1,4 +1,5 @@
 ﻿import { Request, Response } from "express";
+import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { prisma } from "../config/prisma.js";
 
@@ -6,7 +7,7 @@ export const createRestaurant = async (req: Request, res: Response) => {
   const { name, slug, phone, address, ownerName, ownerPhone, ownerPassword, planId } = req.body;
   const passwordHash = await bcrypt.hash(ownerPassword, 10);
 
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const restaurant = await tx.restaurant.create({ data: { name, slug, phone, address } });
     await tx.user.create({ data: { fullName: ownerName, phone: ownerPhone, passwordHash, role: "RESTAURANT_ADMIN", restaurantId: restaurant.id } });
     await tx.subscription.create({

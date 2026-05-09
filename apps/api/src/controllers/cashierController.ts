@@ -1,7 +1,10 @@
 ﻿import { Request, Response } from "express";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../config/prisma.js";
 
 const generateReceiptNo = () => `RCP-${Date.now()}`;
+
+type ReceiptPayloadItem = { nomi: string; soni: number; narxi: number };
 
 export const cashierPayOrder = async (req: Request, res: Response) => {
   const user = (req as any).user;
@@ -10,7 +13,7 @@ export const cashierPayOrder = async (req: Request, res: Response) => {
   const order = await prisma.order.findUnique({ where: { id: orderId }, include: { items: { include: { menuItem: true } }, restaurant: true } });
   if (!order) return res.status(404).json({ message: "Order topilmadi" });
 
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const payment = await tx.payment.create({ data: { restaurantId: user.restaurantId, orderId, cashierId: user.id, method, amountUzs: order.totalUzs } });
     await tx.order.update({ where: { id: orderId }, data: { isPaid: true, status: "YAKUNLANDI" } });
     await tx.room.update({ where: { id: order.roomId }, data: { status: "BO_SH" } });
@@ -20,7 +23,7 @@ export const cashierPayOrder = async (req: Request, res: Response) => {
       restoran: order.restaurant.name,
       sana: new Date().toISOString(),
       kassir: user.id,
-      items: order.items.map((i) => ({ nomi: i.menuItem.name, soni: i.quantity, narxi: i.priceUzs })),
+      items: order.items.map((i): ReceiptPayloadItem => ({ nomi: i.menuItem.name, soni: i.quantity, narxi: i.priceUzs })),
       jami: order.totalUzs
     };
 
