@@ -48,8 +48,8 @@ services:
     depends_on:
       - api
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-      NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL}
+      VITE_API_URL: ${VITE_API_URL}
+      VITE_SOCKET_URL: ${VITE_SOCKET_URL}
     expose:
       - "3000"
 
@@ -67,3 +67,4 @@ services:
 
 volumes:
   pgdata:
+
